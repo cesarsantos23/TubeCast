@@ -1,4 +1,4 @@
-# TuboCast
+# TubeCast
 Proyecto de predicción para youtube
 
 # TubePulse: Predicción de Viralidad y Análisis de Engagement en YouTube
