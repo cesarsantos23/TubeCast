@@ -1,28 +1,41 @@
-# TubeCast
-Proyecto de predicción para youtube
+# TuboCast: Predicción de Viralidad en YouTube
 
-# TubePulse: Predicción de Viralidad y Análisis de Engagement en YouTube
+**Integrantes:**
+* [Tu Nombre Aquí] - Diego Eduardo Martinez Sincel *(O los nombres de tu equipo)*
 
-## 1. Descripción del Proyecto
-Este proyecto busca modelar y predecir la trayectoria de engagement y probabilidad de viralidad de videos en YouTube. El sistema combina métricas de rendimiento temprano (vistas, likes, comentarios) con procesamiento de lenguaje natural (NLP) aplicado a los comentarios de la audiencia para capturar señales cualitativas de recepción y aceleración de contenido.
+## 1. Descripción del Problema y Resultado Esperado
+Predecir qué videos ganarán tracción en YouTube es un desafío complejo. Este proyecto aborda el problema combinando métricas tempranas de rendimiento con Análisis de Sentimiento (NLP) aplicado a los comentarios. El resultado esperado es un modelo predictivo (series de tiempo con variables exógenas) que estime el crecimiento a corto plazo de las visualizaciones y determine si el tono de la audiencia acelera la popularidad de un video.
 
-## 2. Objetivos Principales
-* **Extracción de Datos:** Recolección dinámica de metadatos de videos y muestras de comentarios mediante la YouTube Data API v3.
-* **Análisis de Sentimiento:** Procesamiento de texto en comentarios para cuantificar la polaridad y el tono de la respuesta del público frente al contenido.
-* **Pronóstico de Métricas:** Modelado predictivo de series de tiempo para estimar la acumulación de visualizaciones en las primeras horas/días posteriores a la publicación.
-* **Clasificación de Viralidad:** Definición y predicción de umbrales de aceleración de vistas para catalogar contenido con alto potencial viral.
+## 2. Origen de los Datos
+* **Fuente original:** [YouTube Data API v3](https://developers.google.com/youtube/v3)
+* **Documentación del dataset:** Puedes consultar las justificaciones de la muestra, el diccionario de datos y las consideraciones de privacidad en nuestro [data/README.md](data/README.md).
 
-## 3. Fuentes de Datos y Variables
-* **Fuente Primaria:** YouTube Data API v3.
-* **Variables Clave Consideradas:**
-  * Metadatos: Título, etiquetas, categoría, duración, fecha y hora de publicación.
-  * Métricas de Desempeño: Conteo de vistas (`viewCount`), likes (`likeCount`), total de comentarios (`commentCount`).
-  * Interacciones Textuales: Hilos de comentarios y respuestas para análisis semántico y cálculo de índices de sentimiento.
-
-## 4. Estructura del Repositorio
+## 3. Estructura del Repositorio
 ```text
-├── data/              # Almacenamiento local de datos (ignorado en Git)
-├── notebooks/         # Exploración preliminar y prototipos
-├── src/               # Scripts modulares de extracción y preprocesamiento
-├── .gitignore         # Exclusión de archivos temporales y secretos
-└── README.md          # Documentación del proyecto
+├── data/                  # Datos crudos locales (ignorados en Git) y README del dataset
+├── informe/               # Documento inicial de planteamiento (informe-final.ipynb)
+├── notebooks/             # Entornos interactivos
+│   ├── 01-eda.ipynb               # Análisis exploratorio y evaluación de métricas
+│   └── 02-preparacion-datos.ipynb # Limpieza de texto y manejo de outliers
+├── .env.example           # Plantilla de variables de entorno
+├── .gitignore             # Exclusión de credenciales y datos masivos
+├── pyproject.toml         # Configuración del proyecto y dependencias
+├── uv.lock                # Bloqueo estricto de versiones para reproducibilidad
+└── README.md              # Documentación principal
+```
+
+## 6. Evidencia de Ejecución
+
+A continuación se presenta la evidencia de la ejecución exitosa de los notebooks en un entorno limpio y sincronizado:
+
+### Análisis Exploratorio de Datos (01-eda.ipynb)
+![Evidencia EDA 1](evidencia/eda_captura1.png)
+![Evidencia EDA 2](evidencia/eda_captura2.png)
+![Evidencia EDA 3](evidencia/edu_captura3.png)
+![Evidencia EDA 4](evidencia/eda_captura4.png)
+![Evidencia EDA 5](evidencia/eda_captura5.png)
+
+### Preparación de Datos (02-preparacion-datos.ipynb)
+![Evidencia Prep 1](evidencia/prep_captura1.png)
+![Evidencia Prep 2](evidencia/prep_captura2.png)
+![Evidencia Prep 3](evidencia/prep_captura3.png)
