@@ -1,7 +1,9 @@
 # TuboCast: Predicción de Viralidad en YouTube
 
 **Integrantes:**
-* [Tu Nombre Aquí] - Diego Eduardo Martinez Sincel *(O los nombres de tu equipo)*
+* - Diego Eduardo Martinez
+  - César Adrián Santos
+  - José Manuel García
 
 ## 1. Descripción del Problema y Resultado Esperado
 Predecir qué videos ganarán tracción en YouTube es un desafío complejo. Este proyecto aborda el problema combinando métricas tempranas de rendimiento con Análisis de Sentimiento (NLP) aplicado a los comentarios. El resultado esperado es un modelo predictivo (series de tiempo con variables exógenas) que estime el crecimiento a corto plazo de las visualizaciones y determine si el tono de la audiencia acelera la popularidad de un video.
