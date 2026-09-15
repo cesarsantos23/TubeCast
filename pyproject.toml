@@ -1,0 +1,13 @@
+[project]
+name = "tubocast"
+version = "0.1.0"
+description = "Prediccion de vistas en YouTube"
+requires-python = ">=3.10"
+dependencies = [
+    "ipykernel>=7.3.0",
+    "matplotlib>=3.10.9",
+    "pandas>=2.3.3",
+    "python-dotenv>=1.2.3",
+    "requests>=2.34.2",
+    "seaborn>=0.13.2",
+]
