@@ -62,12 +62,13 @@
 ## 8. Diagrama
 ```mermaid
 flowchart TD
-    A[YouTube API v3] -->|JSON (vistas, texto)| B(Extracción de Datos)
-    B --> C{Preparación y NLP}
-    C -->|Limpieza de texto| D[Cálculo de Sentimiento]
-    C -->|Métricas cuantitativas| E[Feature Engineering]
-    D --> F((Feature Store / DB local))
+    A[YouTube API v3] -->|JSON vistas y texto| B[Extraccion de Datos]
+    B --> C{Preparacion y NLP}
+    C -->|Limpieza de texto| D[Calculo de Sentimiento]
+    C -->|Metricas cuantitativas| E[Feature Engineering]
+    D --> F[(Feature Store o DB local)]
     E --> F
-    F -->|Offline| G[Entrenamiento ML - scikit-learn]
-    G -->|Artefacto .pkl| H{FastAPI - Model as Service}
-    H -->|Inferencia bajo demanda| I[Usuario / Dashboard]
+    F -->|Offline| G[Entrenamiento ML scikit-learn]
+    G -->|Artefacto pkl| H{FastAPI Model as Service}
+    H -->|Inferencia bajo demanda| I[Usuario o Dashboard]
+```
