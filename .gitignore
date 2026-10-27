@@ -1,7 +1,19 @@
-
+# Secretos y ambiente
 .env
 .venv/
 __pycache__/
+*.pyc
+.ipynb_checkpoints/
+.sdk_telemetry/
 
+# Datos (se obtienen con la YouTube Data API; ver data/README.md)
+data/raw/
+data/processed/
+*.parquet
 *.csv
-*.json
+
+# Modelos y tracking local (la procedencia remota vive en MLflow/Unity Catalog)
+artifacts/
+mlruns/
+mlflow.db
+*.pkl

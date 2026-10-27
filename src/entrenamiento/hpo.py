@@ -2,12 +2,13 @@ import optuna
 import mlflow
 import mlflow.sklearn
 from mlflow.models import infer_signature
+from skops.io import dumps, get_untrusted_types
 import pandas as pd
 from src.entrenamiento.modelos import construir_pipeline, calcular_metricas
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-FAMILIAS = ["ridge", "random-forest", "mlp"]
+FAMILIAS = ["ridge", "random-forest", "gradient-boosting"]
 
 
 def sugerir_hiperparametros(trial: optuna.Trial, familia: str) -> dict:
@@ -23,12 +24,14 @@ def sugerir_hiperparametros(trial: optuna.Trial, familia: str) -> dict:
             "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
             "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 5),
         }
-    elif familia == "mlp":
+    elif familia == "gradient-boosting":
         return {
-            "hidden_dim": trial.suggest_categorical("hidden_dim", [32, 64, 128]),
-            "n_layers": trial.suggest_int("n_layers", 1, 3),
-            "alpha": trial.suggest_float("alpha", 1e-5, 1e-1, log=True),
-            "learning_rate_init": trial.suggest_float("learning_rate_init", 1e-4, 1e-2, log=True),
+            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+            "max_iter": trial.suggest_int("max_iter", 100, 500, step=100),
+            "max_depth": trial.suggest_int("max_depth", 2, 10),
+            "max_leaf_nodes": trial.suggest_int("max_leaf_nodes", 15, 63),
+            "min_samples_leaf": trial.suggest_int("min_samples_leaf", 5, 50),
+            "l2_regularization": trial.suggest_float("l2_regularization", 1e-4, 10.0, log=True),
         }
     raise ValueError(f"Familia desconocida: {familia}")
 
@@ -54,6 +57,7 @@ def optimizar_y_registrar_familia(
         mlflow.log_param("n_trials", n_trials)
         mlflow.log_param("metrica_objetivo", "val_rmse")
         mlflow.log_param("direccion", "minimize")
+        mlflow.log_param("sampler", "TPESampler(seed=42)")
 
         def objective(trial: optuna.Trial) -> float:
             params = sugerir_hiperparametros(trial, familia)
@@ -108,12 +112,15 @@ def optimizar_y_registrar_familia(
 
             input_example = X_test.iloc[:3]
             signature = infer_signature(X_test, preds_test)
+            # El pipeline lo entrenamos nosotros: se confía solo en los tipos que contiene.
+            tipos_confiables = get_untrusted_types(data=dumps(final_pipe))
 
             model_info = mlflow.sklearn.log_model(
                 sk_model=final_pipe,
-                artifact_path="model",
+                name="model",
                 signature=signature,
                 input_example=input_example,
+                skops_trusted_types=tipos_confiables,
             )
 
             return {
@@ -121,6 +128,7 @@ def optimizar_y_registrar_familia(
                 "parent_run_id": parent_run.info.run_id,
                 "final_run_id": final_run.info.run_id,
                 "model_uri": model_info.model_uri,
+                "n_trials": n_trials,
                 "best_params": best_params,
                 "val_rmse": best_val_rmse,
                 "test_rmse": metricas_test["rmse"],

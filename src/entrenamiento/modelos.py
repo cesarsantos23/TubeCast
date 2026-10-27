@@ -3,7 +3,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 RANDOM_SEED = 42
@@ -36,16 +36,14 @@ def construir_pipeline(familia: str, params: dict) -> Pipeline:
             random_state=RANDOM_SEED,
             n_jobs=-1,
         )
-    elif familia == "mlp":
-        hidden_dim = int(params.get("hidden_dim", 64))
-        n_layers = int(params.get("n_layers", 2))
-        hidden_layer_sizes = tuple([hidden_dim] * n_layers)
-        modelo = MLPRegressor(
-            hidden_layer_sizes=hidden_layer_sizes,
-            alpha=float(params.get("alpha", 1e-4)),
-            learning_rate_init=float(params.get("learning_rate_init", 1e-3)),
-            max_iter=300,
-            early_stopping=True,
+    elif familia == "gradient-boosting":
+        modelo = HistGradientBoostingRegressor(
+            learning_rate=float(params.get("learning_rate", 0.1)),
+            max_iter=int(params.get("max_iter", 200)),
+            max_depth=params.get("max_depth"),
+            max_leaf_nodes=int(params.get("max_leaf_nodes", 31)),
+            min_samples_leaf=int(params.get("min_samples_leaf", 20)),
+            l2_regularization=float(params.get("l2_regularization", 0.0)),
             random_state=RANDOM_SEED,
         )
     else:
