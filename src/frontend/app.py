@@ -3,15 +3,18 @@ import requests
 import streamlit as st
 from dotenv import load_dotenv
 
-load_dotenv()
+# override=False: respeta API_URL si Docker ya la entregó con env_file.
+load_dotenv(override=False)
 
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
 st.set_page_config(page_title="TubeCast - MLB Forecast", layout="wide")
-st.title("TubeCast: Pronóstico Diario de Visualizaciones (Canal MLB)")
+st.title("TubeCast: vistas acumuladas por cohorte diaria (canal MLB)")
 st.markdown(
-    "Ingresa las visualizaciones diarias de los últimos **14 días** (`t-14` a `t-1`) "
-    "para estimar el tráfico del día siguiente mediante el modelo registrado (`@champion`)."
+    "Cada día es una **cohorte**: los videos publicados ese día. Ingresa las vistas acumuladas "
+    "de las **14 cohortes previas** (`t-14` a `t-1`) y el modelo registrado (`@champion`) estima "
+    "cuántas vistas acumula la cohorte del día `t` en la misma instantánea. "
+    "Es un análisis retrospectivo: no son las vistas que el canal recibe en un día."
 )
 
 valores_default = [
@@ -27,16 +30,18 @@ with st.sidebar:
         try:
             r = requests.get(f"{api_endpoint}/health", timeout=5)
             st.json(r.json())
+        except ValueError:
+            st.error(f"La API respondió HTTP {r.status_code} sin JSON.")
         except requests.exceptions.RequestException as e:
             st.error(f"No se pudo conectar con la API: {e}")
 
 with st.form("prediction_form"):
-    st.subheader("Ventana de los últimos 14 días")
+    st.subheader("Vistas acumuladas de las 14 cohortes previas")
     cols = st.columns(7)
     lags = []
     for i in range(14):
         col = cols[i % 7]
-        etiqueta = f"Día t-{14 - i}"
+        etiqueta = f"Cohorte t-{14 - i}"
         val = col.number_input(
             etiqueta,
             value=float(valores_default[i]),
@@ -55,7 +60,7 @@ if submitted:
             data = response.json()
             st.success("Predicción calculada correctamente")
             c1, c2, c3 = st.columns(3)
-            c1.metric("Vistas Estimadas (Día t)", data["predicted_views_formatted"])
+            c1.metric("Vistas estimadas (cohorte t)", data["predicted_views_formatted"])
             c2.metric("Versión del Modelo", f"v{data['model_version']} ({data['model_family']})")
             c3.metric("Modelo Registrado", data["model_name"])
 
@@ -64,12 +69,15 @@ if submitted:
                 st.write("**Solicitud enviada:**", payload)
                 st.write("**Respuesta recibida:**", data)
         else:
-            st.error(f"Error de validación en la API (HTTP {response.status_code})")
-            st.json(response.json())
+            st.error(f"La API rechazó la solicitud (HTTP {response.status_code})")
+            try:
+                st.json(response.json())
+            except ValueError:
+                st.write(response.text)
     except requests.exceptions.ConnectionError:
         st.error(
             f"Error de conexión: No fue posible comunicarse con la API en {api_endpoint}. "
-            "Verifica que el servidor Uvicorn esté en ejecución."
+            "Verifica que el contenedor de la API esté en ejecución y que ya cargó el modelo."
         )
     except requests.exceptions.RequestException as e:
         st.error(f"Error inesperado al consultar la API: {e}")
