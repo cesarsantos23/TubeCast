@@ -45,7 +45,7 @@ def task_cargar_datos() -> pd.DataFrame:
 @task(name="2_preparar_serie_y_particiones")
 def task_preparar_datos(df_raw: pd.DataFrame) -> dict:
     logger = get_run_logger()
-    logger.info("Construyendo serie diaria y ventanas deslizantes...")
+    logger.info("Construyendo serie de cohortes diarias y ventanas deslizantes...")
     daily = construir_serie_diaria(df_raw)
     if len(daily) < MIN_DIAS_SERIE:
         raise ValueError(f"La serie diaria tiene {len(daily)} días; se requieren al menos {MIN_DIAS_SERIE}.")
@@ -69,7 +69,7 @@ def task_hpo_familia(familia: str, particiones: dict, n_trials: int) -> dict:
 @task(name="4_comparar_y_seleccionar")
 def task_comparar_modelos(resultados: list[dict]) -> dict:
     logger = get_run_logger()
-    logger.info("Comparando el mejor modelo de cada familia en el conjunto de prueba...")
+    logger.info("Comparando el mejor modelo de cada familia (selección por validación)...")
 
     df_comp = pd.DataFrame([
         {
@@ -83,15 +83,27 @@ def task_comparar_modelos(resultados: list[dict]) -> dict:
             "best_params": json.dumps(r["best_params"]),
         }
         for r in resultados
-    ]).sort_values("test_rmse")
+    ]).sort_values("val_rmse")
 
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
     df_comp.to_csv(ARTIFACTS_DIR / "model_comparison.csv", index=False)
     logger.info("\n" + df_comp.drop(columns=["best_params"]).to_string(index=False))
 
-    ganador = min(resultados, key=lambda x: x["test_rmse"])
-    logger.info(f"Familia seleccionada: {ganador['familia']} (menor test_rmse)")
+    # La selección usa solo validación; test se reporta después como evaluación final.
+    ganador = min(resultados, key=lambda x: x["val_rmse"])
+    logger.info(
+        f"Familia seleccionada: {ganador['familia']} (menor val_rmse={ganador['val_rmse']:,.0f}); "
+        f"su test_rmse={ganador['test_rmse']:,.0f} se reporta sin intervenir en la elección"
+    )
     return ganador
+
+
+def registro_remoto_requerido() -> bool:
+    """El registro remoto es obligatorio salvo que se pida explícitamente una prueba local."""
+    valor = os.getenv("REQUIERE_REGISTRO_REMOTO")
+    if valor is not None:
+        return valor.strip().lower() in {"1", "true", "si", "sí", "yes"}
+    return mlflow.get_tracking_uri().startswith("databricks")
 
 
 @task(name="5_registrar_en_registry_y_asignar_champion")
@@ -103,6 +115,7 @@ def task_registrar_modelos(resultados: list[dict], ganador: dict) -> dict:
     tracking_uri = mlflow.get_tracking_uri()
 
     version_ganadora = "local-v1"
+    registro_completo = False
     client = MlflowClient()
 
     try:
@@ -138,8 +151,17 @@ def task_registrar_modelos(resultados: list[dict], ganador: dict) -> dict:
             version=version_ganadora,
         )
         logger.info(f"Alias @{alias_name} asignado a la versión {version_ganadora} ({ganador['familia']})")
+        registro_completo = True
     except Exception as e:
-        logger.warning(f"Aviso Registry ({tracking_uri}): {e}. Usando artefacto local de respaldo.")
+        if registro_remoto_requerido():
+            # Con Databricks configurado, un registro incompleto es un fallo del flow,
+            # no un éxito con respaldo silencioso.
+            logger.error(f"Falló el registro en {uc_model_name} ({tracking_uri}): {e}")
+            raise
+        logger.warning(
+            f"REGISTRO INCOMPLETO en {tracking_uri}: {e}. "
+            "Solo queda el artefacto local de respaldo (no es una ejecución remota completa)."
+        )
 
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(ganador["pipeline"], ARTIFACTS_DIR / "champion_model.pkl")
@@ -150,6 +172,9 @@ def task_registrar_modelos(resultados: list[dict], ganador: dict) -> dict:
         "familia_ganadora": ganador["familia"],
         "final_run_id": ganador["final_run_id"],
         "tracking_uri": tracking_uri,
+        "registro_completo": registro_completo,
+        "criterio_seleccion": "menor val_rmse",
+        "val_rmse": ganador["val_rmse"],
         "test_rmse": ganador["test_rmse"],
         "test_mae": ganador["test_mae"],
         "test_mape": ganador["test_mape"],
@@ -180,7 +205,10 @@ def ejecutar_pipeline_entrenamiento(n_trials: int = 20) -> dict:
 
     ganador = task_comparar_modelos(resultados)
     resumen = task_registrar_modelos(resultados, ganador)
-    print("Pipeline finalizado con éxito. Resumen del modelo campeón:", resumen)
+    if resumen["registro_completo"]:
+        print("Pipeline finalizado: tres versiones registradas y alias asignado.", resumen)
+    else:
+        print("Pipeline terminado SIN registro completo (solo respaldo local).", resumen)
     return resumen
 
 
