@@ -1,0 +1,45 @@
+# TubeCast: API (FastAPI) + interfaz (Streamlit) con red host.
+# Con network_mode: host ambos contenedores comparten la red del anfitrión, por eso
+# la interfaz llama a la API en http://127.0.0.1:8000: "127.0.0.1" es el propio
+# anfitrión (tu computadora o la instancia EC2), no el contenedor de la interfaz.
+# Con host no se usan "ports": cada proceso escucha directamente en su puerto.
+name: tubecast
+
+services:
+  ui:
+    image: tubecast-ui-image:v1
+    container_name: tubecast-ui-container
+    build:
+      context: .
+      dockerfile: src/frontend/Dockerfile
+    # La interfaz no recibe el .env (no necesita credenciales), sólo la URL de la API.
+    environment:
+      API_URL: http://127.0.0.1:8000
+    network_mode: host
+    command: ["streamlit", "run", "src/frontend/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    depends_on:
+      - api
+
+  api:
+    image: tubecast-api-image:v1
+    container_name: tubecast-api-container
+    build:
+      context: .
+      dockerfile: src/api/Dockerfile
+    # Configuración privada fuera de Git y fuera de la imagen.
+    env_file:
+      - .env
+    network_mode: host
+    # Sólo se usa con MODEL_SOURCE=local (artefacto propio transferido en privado).
+    volumes:
+      - ./artifacts:/code/artifacts:ro
+    # API_HOST viene del .env de la raíz: 127.0.0.1 en EC2 (la API no se expone);
+    # en Docker Desktop puede ser 0.0.0.0 para abrir /docs desde el navegador local.
+    command: ["uvicorn", "src.api.main:app", "--host", "${API_HOST:-127.0.0.1}", "--port", "8000"]
+    # "healthy" en `docker compose ps` significa que /health ya reporta el modelo cargado.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,sys,urllib.request; sys.exit(0 if json.load(urllib.request.urlopen('http://127.0.0.1:8000/health'))['model_loaded'] else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s

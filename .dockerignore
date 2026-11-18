@@ -1,0 +1,21 @@
+# El contexto de construcción es la raíz del repo: excluir secretos, ambientes,
+# datos, modelos y todo lo que las imágenes no necesitan.
+.env
+.env.*
+*.pem
+.git/
+.gitignore
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.ipynb
+.sdk_telemetry/
+data/
+artifacts/
+mlruns/
+mlflow.db
+notebooks/
+informe/
+evidencia/
+docs/
