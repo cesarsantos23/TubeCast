@@ -4,12 +4,12 @@
 
 | Integrante | Rol en la tercera entrega |
 |---|---|
-| Diego Eduardo Martínez Sincel | _(completar)_ |
-| César Adrián Santos | _(completar)_ |
-| José Manuel García | _(completar)_ |
+| Diego Eduardo Martínez Sincel | Correcciones, contenedores y despliegue en EC2 |
+| César Adrián Santos | Revisión del PR y documentación |
+| José Manuel García | Databricks: experimento y Model Registry |
 
-- **Responsable de Databricks (MLflow remoto y Model Registry):** _(completar)_
-- **Responsable del despliegue en EC2:** _(completar)_
+- **Responsable de Databricks (MLflow remoto y Model Registry):** José Manuel García
+- **Responsable del despliegue en EC2:** Diego Eduardo Martínez Sincel
 
 ## 1. Qué hace el proyecto
 
@@ -179,7 +179,7 @@ docker compose -f docker-compose.yaml down
 
 ## 9. Despliegue en EC2
 
-Usamos **una sola instancia EC2 ya asignada** a _(completar: integrante)_, en `us-east-1` (Ubuntu 24.04, t3.medium, 20 GiB gp3). El detalle y las evidencias están en [notebooks/09-despliegue.ipynb](notebooks/09-despliegue.ipynb).
+Usamos **una sola instancia EC2 ya asignada** a Diego Eduardo Martínez Sincel, en `us-east-1` (Ubuntu 24.04, t3.medium, 20 GiB gp3). El detalle y las evidencias están en [notebooks/09-despliegue.ipynb](notebooks/09-despliegue.ipynb).
 
 **Grupo de seguridad:** SSH (22) sólo desde *My IP* del responsable; Streamlit (8501) sólo desde las IP públicas de las computadoras que prueban (`IP/32`). El puerto 8000 **no** se abre: la API escucha en `127.0.0.1` dentro del servidor.
 
@@ -242,13 +242,13 @@ Cada imagen está en `evidencia/` y se interpreta en el [informe](informe/inform
 | API: entrada inválida | [t7-07-api-invalida.png](evidencia/t7-07-api-invalida.png) |
 | Frontend integrado | [t7-08-frontend.png](evidencia/t7-08-frontend.png) |
 | Ambiente y builds | [t8-01-uv-sync-builds.png](evidencia/t8-01-uv-sync-builds.png) |
-| Integración local en contenedores | [t8-02-integracion-local.png](evidencia/t8-02-integracion-local.png) |
+| Integración en contenedores | Demostrada en EC2: [t8-04](evidencia/t8-04-ec2-despliegue.png) y [t8-05](evidencia/t8-05-prediccion-remota.png) (Docker Desktop local no tenía espacio en disco) |
 | Instancia y red | [t8-03-ec2-instancia-red.png](evidencia/t8-03-ec2-instancia-red.png) |
 | Despliegue en EC2 | [t8-04-ec2-despliegue.png](evidencia/t8-04-ec2-despliegue.png) |
 | Predicción remota | [t8-05-prediccion-remota.png](evidencia/t8-05-prediccion-remota.png) |
 | Entrada inválida en EC2 | [t8-06-ec2-entrada-invalida.png](evidencia/t8-06-ec2-entrada-invalida.png) |
 | Logs | [t8-07-logs.png](evidencia/t8-07-logs.png) |
-| Cierre | [t8-08-cierre.png](evidencia/t8-08-cierre.png) |
+| Cierre | [t8-08-cierre.png](evidencia/t8-08-cierre.png) · [instancia detenida](evidencia/t8-08.2-cierre.png) |
 
 Evidencias de la primera entrega (EDA y preparación sobre un video de muestra):
 
