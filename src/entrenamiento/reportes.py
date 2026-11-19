@@ -74,7 +74,8 @@ def tabla_comparacion(finales: pd.DataFrame) -> pd.DataFrame:
             "mejores_params": params,
             "run_id": r["run_id"],
         })
-    return pd.DataFrame(filas).sort_values("test_rmse").reset_index(drop=True)
+    # Orden por validación: es el criterio con el que el flow elige al champion.
+    return pd.DataFrame(filas).sort_values("val_rmse").reset_index(drop=True)
 
 
 def versiones_registradas(modelo: str) -> pd.DataFrame:

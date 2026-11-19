@@ -10,12 +10,20 @@ RANDOM_SEED = 42
 
 
 def calcular_metricas(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
-    """Calcula RMSE, MAE y MAPE truncando predicciones negativas a 0."""
-    y_pred_clean = np.maximum(y_pred, 0.0)
+    """
+    Calcula RMSE, MAE y MAPE truncando predicciones negativas a 0.
+    El MAPE se calcula solo sobre los días con vistas > 0: dividir entre un cero
+    (días sin publicaciones) produce porcentajes sin sentido.
+    """
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred_clean = np.maximum(np.asarray(y_pred, dtype=float), 0.0)
     rmse_val = float(np.sqrt(mean_squared_error(y_true, y_pred_clean)))
     mae_val = float(mean_absolute_error(y_true, y_pred_clean))
-    y_true_safe = np.where(y_true == 0, 1e-8, y_true)
-    mape_val = float(np.mean(np.abs((y_true - y_pred_clean) / y_true_safe)) * 100.0)
+    con_vistas = y_true > 0
+    if con_vistas.any():
+        mape_val = float(np.mean(np.abs((y_true[con_vistas] - y_pred_clean[con_vistas]) / y_true[con_vistas])) * 100.0)
+    else:
+        mape_val = float("nan")
     return {"rmse": rmse_val, "mae": mae_val, "mape": mape_val}
 
 

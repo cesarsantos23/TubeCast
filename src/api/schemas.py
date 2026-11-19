@@ -7,7 +7,10 @@ class PredictionRequest(BaseModel):
         ...,
         min_length=14,
         max_length=14,
-        description="Lista ordenada de vistas diarias de los últimos 14 días (día t-14 al día t-1).",
+        description=(
+            "Vistas acumuladas de las 14 cohortes previas (videos publicados en los días t-14 ... t-1), "
+            "medidas en la misma instantánea."
+        ),
         examples=[[
             3529320.0, 3816846.0, 1660823.0, 3210395.0, 3791115.0,
             2218409.0, 1034500.0, 3077739.0, 3434652.0, 838785.0,

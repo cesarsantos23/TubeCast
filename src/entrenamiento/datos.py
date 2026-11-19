@@ -9,6 +9,10 @@ load_dotenv()
 
 CHANNEL_ID = "UCoLrcjPV5PbUrUyXq5mjc_A"  # Canal oficial MLB
 LOOKBACK = 14
+# Las cohortes publicadas en los últimos días de la descarga todavía no acumulan
+# sus vistas: se descartan para que todas las cohortes tengan al menos este
+# número de días de antigüedad al momento de la instantánea.
+DIAS_MADURACION = 30
 RAW_PARQUET_PATH = Path("data/raw/mlb_raw_videos.parquet")
 PROCESSED_PARQUET_PATH = Path("data/processed/mlb_daily_series.parquet")
 
@@ -105,15 +109,31 @@ def descargar_datos_mlb(
     return df
 
 
-def construir_serie_diaria(df_raw: pd.DataFrame) -> pd.Series:
-    """Agrupa las vistas por día calendario, rellena días sin subidas con 0 y guarda en Parquet."""
+def construir_serie_diaria(df_raw: pd.DataFrame, dias_maduracion: int = DIAS_MADURACION) -> pd.Series:
+    """
+    Serie de cohortes diarias.
+
+    Cada día t es una cohorte: los videos publicados ese día. Su valor es la suma
+    de las vistas acumuladas de esos videos *al momento de la descarga* (la API solo
+    entrega el conteo actual). No son las vistas recibidas el día t.
+
+    Se descartan los últimos `dias_maduracion` días (cohortes inmaduras) y se
+    rellenan con 0 los días sin publicaciones.
+    """
     df = df_raw.copy()
     df["date"] = pd.to_datetime(df["date"]).dt.tz_localize(None).dt.normalize()
     daily = df.groupby("date")["views"].sum().sort_index().asfreq("D").fillna(0.0)
 
+    if dias_maduracion > 0:
+        corte = daily.index.max() - pd.Timedelta(days=dias_maduracion)
+        daily = daily[daily.index <= corte]
+
     PROCESSED_PARQUET_PATH.parent.mkdir(parents=True, exist_ok=True)
     daily.to_frame(name="views").to_parquet(PROCESSED_PARQUET_PATH)
-    print(f"Serie diaria guardada en: {PROCESSED_PARQUET_PATH} ({len(daily)} días)")
+    print(
+        f"Serie de cohortes guardada en: {PROCESSED_PARQUET_PATH} ({len(daily)} días, "
+        f"sin los últimos {dias_maduracion} días inmaduros)"
+    )
     return daily
 
 
@@ -122,7 +142,9 @@ def crear_ventanas_tabulares(
     lookback: int = LOOKBACK,
 ) -> tuple[pd.DataFrame, pd.Series, pd.DatetimeIndex]:
     """
-    Convierte la serie diaria en matriz de lags (lag_14 ... lag_1).
+    Convierte la serie de cohortes en matriz de lags (lag_14 ... lag_1).
+    La fila con target en la cohorte t usa las cohortes t-14 ... t-1, todas medidas
+    en la misma instantánea (análisis retrospectivo, no pronóstico en tiempo real).
     """
     valores = series.values
     fechas = series.index
